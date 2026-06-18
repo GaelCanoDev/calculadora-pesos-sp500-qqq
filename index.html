@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estrategia Financiera: ARS vs USD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Calma Financiera (Base Slate-50, Primario Indigo-900, Acentos Emerald-500 y Amber-500) -->
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (max-width: 640px) {
+            .chart-container { height: 250px; }
+        }
+        .custom-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s;
+        }
+        .custom-card:hover { transform: translateY(-2px); }
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); }
+        .tab-active { border-bottom: 3px solid #10b981; color: #10b981; }
+        
+        /* Smooth scrolling for chat container */
+        .chat-container {
+            scroll-behavior: smooth;
+        }
+        
+        /* Spinner styling */
+        .dot-flashing {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #6366f1;
+            color: #6366f1;
+            animation: dot-flashing 1s infinite linear alternate;
+            animation-delay: .5s;
+        }
+        .dot-flashing::before, .dot-flashing::after {
+            content: '';
+            display: inline-block;
+            position: absolute;
+            top: 0;
+        }
+        .dot-flashing::before {
+            left: -15px;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #6366f1;
+            color: #6366f1;
+            animation: dot-flashing 1s infinite alternate;
+            animation-delay: 0s;
+        }
+        .dot-flashing::after {
+            left: 15px;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #6366f1;
+            color: #6366f1;
+            animation: dot-flashing 1s infinite alternate;
+            animation-delay: 1s;
+        }
+        @keyframes dot-flashing {
+            0% { background-color: #6366f1; }
+            50%, 100% { background-color: #e0e7ff; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans leading-relaxed">
+
+    <!-- Toast Notification (Replacement for alert) -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-50">
+        <span class="text-emerald-400">✔️</span>
+        <span id="toast-text">Acción completada con éxito</span>
+    </div>
+
+    <!-- Header -->
+    <header class="gradient-bg text-white py-12 px-6 shadow-xl mb-8">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Estrategia ARS vs. USD</h1>
+            <p id="header-subtitle" class="text-lg text-slate-300 max-w-2xl mx-auto">Análisis macroeconómico estratégico y simulación de carteras para optimizar la gestión de capital.</p>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 pb-20">
+
+        <!-- Section 1: Contexto Macroeconómico -->
+        <section class="mb-16">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-indigo-950 mb-4">1. El Escenario Macroeconómico</h2>
+                <p class="text-slate-600">Este panel resume las variables críticas del mercado actual. El objetivo es entender por qué la moneda local enfrenta un desafío tan grande frente a la inflación y cómo los instrumentos tradicionales como el plazo fijo están quedando obsoletos. Los valores se actualizarán automáticamente si modificas los parámetros en el simulador.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="custom-card p-6 border-l-4 border-red-500">
+                    <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Inflación Proyectada</span>
+                    <div class="text-3xl font-black text-slate-800 flex items-baseline gap-1">
+                        <span id="displayInflacion">33.2</span><span class="text-xl font-bold text-red-500">%</span>
+                        <span class="text-sm font-normal text-red-500 ml-1">Anual</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Basado en un promedio mensual del 2.1% - 2.5%.</p>
+                </div>
+                <div class="custom-card p-6 border-l-4 border-amber-500">
+                    <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Tasa Plazo Fijo / FCI</span>
+                    <div class="text-3xl font-black text-slate-800 flex items-baseline gap-1">
+                        <span id="displayTasa">20.0</span><span class="text-xl font-bold text-amber-500">%</span>
+                        <span class="text-sm font-normal text-amber-500 ml-1">Anual</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Rendimiento nominal antes de descontar inflación.</p>
+                </div>
+                <div class="custom-card p-6 border-l-4 border-emerald-500">
+                    <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Dólar Crawl (Gobierno)</span>
+                    <div class="text-3xl font-black text-slate-800 flex items-baseline gap-1">
+                        <span id="displayCrawl">2.0</span><span class="text-xl font-bold text-emerald-500">%</span>
+                        <span class="text-sm font-normal text-emerald-500 ml-1">Mensual</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">Ritmo oficial de devaluación proyectado.</p>
+                </div>
+            </div>
+
+            <div class="custom-card p-8 bg-white">
+                <h3 class="text-xl font-bold mb-6 text-center">Comparativa: Rendimiento Real Neto Anualizado</h3>
+                <div class="chart-container flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50" id="yieldChartContainer">
+                    <canvas id="yieldChart" class="hidden"></canvas>
+                    <div id="yieldChartPlaceholder" class="text-center p-4">
+                        <span class="text-4xl">📊</span>
+                        <p class="text-sm text-slate-500 mt-2 font-medium">Configure los parámetros de simulación y calcule para visualizar esta comparativa.</p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-500 mt-6 text-center italic">Nota: El rendimiento real neto descuenta la inflación de la moneda base elegida por el usuario de forma interactiva.</p>
+            </div>
+        </section>
+
+        <!-- Section 2: Simulador Interactivo -->
+        <section class="mb-16 bg-white rounded-2xl p-8 shadow-sm border border-slate-200">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-indigo-950 mb-4">2. Simulador de Riqueza Real</h2>
+                <p class="text-slate-600">Calcula cuánto capital acumularás aportando un ahorro indexado mes a mes. Personaliza todos los parámetros macroeconómicos del día y haz clic en calcular para ver la proyección constante de riqueza.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Ahorro Inicial Mensual (ARS)</label>
+                            <input type="number" id="inputSavings" placeholder="Ej: 100000" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Plazo (Años)</label>
+                            <input type="number" id="inputHorizon" placeholder="Ej: 5" min="1" max="50" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                        </div>
+                    </div>
+
+                    <div class="p-5 bg-indigo-50/60 rounded-xl border border-indigo-100/80 space-y-4">
+                        <h4 class="font-bold text-indigo-900 text-sm">Parámetros Macroeconómicos del Día (Editables):</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Inflación Anual ARS (%)</label>
+                                <input type="number" id="paramInflacionArs" value="33.2" step="0.1" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg outline-none text-xs focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tasa Anual Pesos FCI (%)</label>
+                                <input type="number" id="paramTasaPesos" value="20.0" step="0.1" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg outline-none text-xs focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Retorno Anual S&P 500 (%)</label>
+                                <input type="number" id="paramRendSyp" value="12.5" step="0.1" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg outline-none text-xs focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Devaluación Mensual (%)</label>
+                                <input type="number" id="paramDevaluacion" value="2.0" step="0.1" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg outline-none text-xs focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tipo de Cambio MEP ($)</label>
+                                <input type="number" id="paramTcr" value="1450" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg outline-none text-xs focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Inflación Anual USD (%)</label>
+                                <input type="number" id="paramInflacionUsd" value="2.5" step="0.1" class="w-full p-2.5 bg-white border border-slate-300 rounded-lg outline-none text-xs focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="calculateStrategy()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md shadow-indigo-100 text-sm hover:translate-y-[-1px]">
+                        📊 Calcular Simulación
+                    </button>
+                </div>
+
+                <div class="flex flex-col justify-center">
+                    <div id="resultsArea" class="space-y-4">
+                        <div class="p-6 rounded-xl bg-slate-50 border border-slate-200">
+                            <span class="block text-slate-500 text-sm font-bold uppercase">Resultado en Pesos (FCI)</span>
+                            <span id="resPesos" class="text-3xl font-black text-slate-800">---</span>
+                            <div class="text-xs text-red-600 font-bold mt-1">🔻 Ajuste sujeto a devaluación real</div>
+                        </div>
+                        
+                        <!-- Tarjeta de Punto de Equilibrio (Capital Total Aportado) -->
+                        <div class="p-6 rounded-xl bg-indigo-50 border border-indigo-200">
+                            <span class="block text-indigo-600 text-sm font-bold uppercase">Capital Total Aportado (Punto de Equilibrio)</span>
+                            <span id="resAporte" class="text-3xl font-black text-indigo-950">---</span>
+                            <div class="text-xs text-indigo-700 font-bold mt-1">⚖️ Tu ahorro total de bolsillo; lo que supere este monto es ganancia real</div>
+                        </div>
+
+                        <div class="p-6 rounded-xl bg-emerald-50 border border-emerald-200">
+                            <span class="block text-emerald-600 text-sm font-bold uppercase">Resultado en S&P 500 (USD)</span>
+                            <span id="resDolares" class="text-3xl font-black text-emerald-900">---</span>
+                            <div class="text-xs text-emerald-700 font-bold mt-1">🚀 Crecimiento de poder de compra global</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="chart-container flex items-center justify-center border border-dashed border-slate-300 rounded-xl bg-slate-50 mt-12" id="projectionChartContainer">
+                <canvas id="projectionChart" class="hidden"></canvas>
+                <div id="projectionChartPlaceholder" class="text-center p-4">
+                    <span class="text-4xl">📈</span>
+                    <p class="text-sm text-slate-500 mt-2 font-medium">Configure los parámetros de simulación y calcule para visualizar la proyección temporal.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: IA Hub (Chat Grounding) -->
+        <section class="mb-16">
+            <div class="mb-8 text-center max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold text-indigo-950 mb-2">3. Asistente AI de Consulta de Mercado</h2>
+                <p class="text-slate-600">Interactúa con nuestro asesor inteligente con acceso en tiempo real a Google Search para obtener datos financieros al día, tasas vigentes y análisis macroeconómico argentino.</p>
+            </div>
+
+            <div class="max-w-3xl mx-auto">
+                <!-- Chatbot con Grounding de Búsqueda -->
+                <div class="custom-card p-6 flex flex-col h-[550px] border border-slate-200">
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                        <div>
+                            <h3 class="font-bold text-lg text-indigo-950 flex items-center gap-2">
+                                <span class="text-indigo-600">💬</span> Asistente Estratégico AI
+                            </h3>
+                            <p class="text-xs text-slate-500">Conectado a Google Search para datos financieros reales</p>
+                        </div>
+                        <span class="bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-semibold">Gemini 3.1 Live</span>
+                    </div>
+
+                    <!-- Chat Message Stream -->
+                    <div id="chatMessages" class="flex-grow overflow-y-auto my-4 space-y-4 chat-container pr-2">
+                        <div class="bg-indigo-50 text-indigo-950 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-sm">
+                            <p class="font-semibold text-indigo-900 mb-1">Angel Economista:</p>
+                            ¡Hola! Soy tu consultor de mercado de capitales. Puedo responder tus preguntas sobre inversión en pesos y dólares con información actualizada de la economía argentina. ¿De qué te gustaría hablar hoy?
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="mt-auto space-y-2">
+                        <!-- Quick suggestions -->
+                        <div class="flex flex-wrap gap-2 py-1 overflow-x-auto max-h-16">
+                            <button onclick="sendQuickQuestion('¿Cuál es la tasa de las LECAPs más corta hoy en Argentina?')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap">⚡ Tasa de LECAPs hoy</button>
+                            <button onclick="sendQuickQuestion('¿Cuánto rinde un plazo fijo hoy promedio y qué brecha tiene con el MEP?')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap">💵 Brecha cambiaria</button>
+                            <button onclick="sendQuickQuestion('Explicame el Carry Trade en 3 ideas sencillas')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap">💡 ¿Qué es el Carry Trade?</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="chatInput" placeholder="Pregúntame algo sobre mercados..." class="flex-grow p-3 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" onkeydown="if(event.key === 'Enter') sendMessage()">
+                            <button onclick="sendMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 rounded-xl transition-colors text-sm flex items-center justify-center">
+                                Enviar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-indigo-950 text-white py-12 px-6 border-t border-indigo-900 text-center">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 mb-8 text-left">
+            <div>
+                <p class="font-bold text-xl">Angel Economista</p>
+                <p class="text-indigo-400 text-sm">Mercado de Capitales & Gestión de Activos</p>
+            </div>
+            <div class="text-right max-md:text-left">
+                <p class="text-slate-400 text-sm italic">"En finanzas, el tiempo es el mejor aliado o el peor enemigo. Elige bien tu moneda."</p>
+            </div>
+        </div>
+        <div class="border-t border-indigo-900/60 pt-6 text-center text-xs text-slate-400 tracking-wide">
+            2026 - todos los derechos reservados - creado por <a href="https://github.com/GaelCanoDev" target="_blank" class="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">GaelCanoDev 💵</a>
+        </div>
+    </footer>
+
+    <script>
+        const ctxYield = document.getElementById('yieldChart').getContext('2d');
+        const ctxProj = document.getElementById('projectionChart').getContext('2d');
+        
+        let projectionChart;
+        let yieldChart;
+
+        // Toast Helper (replaces alert)
+        function showToast(text, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.innerText = text;
+            toast.className = `fixed bottom-5 right-5 transform translate-y-0 opacity-100 transition-all duration-300 ${isSuccess ? 'bg-slate-900' : 'bg-red-800'} text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-50`;
+            
+            setTimeout(() => {
+                toast.className = "fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-50";
+            }, 3000);
+        }
+
+        // Keep Section 1 Macro Cards synced with input parameters in Section 2
+        function syncMacroCards() {
+            const infVal = document.getElementById('paramInflacionArs').value || '33.2';
+            const tasaVal = document.getElementById('paramTasaPesos').value || '20.0';
+            const crawlVal = document.getElementById('paramDevaluacion').value || '2.0';
+
+            document.getElementById('displayInflacion').innerText = parseFloat(infVal).toFixed(1);
+            document.getElementById('displayTasa').innerText = parseFloat(tasaVal).toFixed(1);
+            document.getElementById('displayCrawl').innerText = parseFloat(crawlVal).toFixed(1);
+        }
+
+        // Attach dynamic sync listeners
+        document.getElementById('paramInflacionArs').addEventListener('input', syncMacroCards);
+        document.getElementById('paramTasaPesos').addEventListener('input', syncMacroCards);
+        document.getElementById('paramDevaluacion').addEventListener('input', syncMacroCards);
+
+        // Run sync on load
+        window.onload = function () {
+            syncMacroCards();
+        }
+
+        // Updates the comparative yield chart based on user inputs
+        function updateYieldComparison(inflacionArs, tasaPesos, rendSyp, inflacionUsd) {
+            const yieldPesos = ((1 + tasaPesos) / (1 + inflacionArs) - 1) * 100;
+            const yieldDolarGuardado = ((1 + 0) / (1 + inflacionUsd) - 1) * 100;
+            const yieldSypReal = ((1 + rendSyp) / (1 + inflacionUsd) - 1) * 100;
+
+            if (yieldChart) yieldChart.destroy();
+
+            // Show canvas and remove placeholder container borders
+            document.getElementById('yieldChart').classList.remove('hidden');
+            document.getElementById('yieldChartPlaceholder').classList.add('hidden');
+            document.getElementById('yieldChartContainer').classList.remove('flex', 'items-center', 'justify-center', 'border-dashed');
+
+            yieldChart = new Chart(ctxYield, {
+                type: 'bar',
+                data: {
+                    labels: ['Pesos (FCI)', 'Dólar Guardado', 'S&P 500'],
+                    datasets: [{
+                        label: 'Rendimiento Real Neto (%)',
+                        data: [
+                            yieldPesos.toFixed(2),
+                            yieldDolarGuardado.toFixed(2),
+                            yieldSypReal.toFixed(2)
+                        ],
+                        backgroundColor: [
+                            yieldPesos >= 0 ? '#10b981' : '#ef4444',
+                            yieldDolarGuardado >= 0 ? '#10b981' : '#f59e0b',
+                            yieldSypReal >= 0 ? '#10b981' : '#10b981'
+                        ],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            title: { display: true, text: 'Rendimiento Real (%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Calculation Logic triggered on click
+        function calculateStrategy() {
+            const monthlySaving = parseFloat(document.getElementById('inputSavings').value);
+            const years = parseInt(document.getElementById('inputHorizon').value);
+            
+            // Read macro inputs directly from UI
+            const inflacionArsAnual = parseFloat(document.getElementById('paramInflacionArs').value) / 100;
+            const tasaPesosAnual = parseFloat(document.getElementById('paramTasaPesos').value) / 100;
+            const rendSypAnual = parseFloat(document.getElementById('paramRendSyp').value) / 100;
+            const devaluacionMensual = parseFloat(document.getElementById('paramDevaluacion').value) / 100;
+            const tcrInicial = parseFloat(document.getElementById('paramTcr').value);
+            const inflacionUsdAnual = parseFloat(document.getElementById('paramInflacionUsd').value) / 100;
+
+            if (isNaN(monthlySaving) || monthlySaving <= 0) {
+                showToast("Por favor, ingrese un monto de ahorro válido", false);
+                return;
+            }
+            if (isNaN(years) || years <= 0) {
+                showToast("Por favor, ingrese un plazo de años válido", false);
+                return;
+            }
+            if (isNaN(inflacionArsAnual) || isNaN(tasaPesosAnual) || isNaN(rendSypAnual) || isNaN(devaluacionMensual) || isNaN(tcrInicial) || tcrInicial <= 0 || isNaN(inflacionUsdAnual)) {
+                showToast("Por favor, complete todos los parámetros macroeconómicos del día", false);
+                return;
+            }
+
+            const months = years * 12;
+            let labels = [];
+            let dataPesos = [];
+            let dataDolares = [];
+
+            let currentPesos = 0;
+            let currentUsd = 0;
+            let currentTcr = tcrInicial;
+            let currentInput = monthlySaving;
+            let totalInputUsd = 0; // New variable to track total investment in USD equivalent
+
+            for (let i = 1; i <= months; i++) {
+                // Estrategia Pesos: Capital + Aporte + Interés (Mensualizado)
+                currentPesos = (currentPesos + currentInput) * (1 + (tasaPesosAnual / 12));
+                
+                // Estrategia Dólar: Aporte convertido a USD + Interés USD (Mensualizado)
+                let usdInvestedThisMonth = currentInput / currentTcr;
+                currentUsd = (currentUsd + usdInvestedThisMonth) * (1 + (rendSypAnual / 12));
+
+                // Acumulamos el valor del capital aportado en su equivalente en dólares reales del momento
+                totalInputUsd += usdInvestedThisMonth;
+
+                // Proyectamos variables para el próximo mes
+                currentTcr *= (1 + devaluacionMensual);
+                currentInput *= (1 + (inflacionArsAnual / 12)); // Indexamos el aporte
+
+                if (i % (months > 12 ? 6 : 1) === 0 || i === months) {
+                    labels.push(`Mes ${i}`);
+                    dataPesos.push((currentPesos / currentTcr).toFixed(0)); // Medimos ambos en USD para comparar poder de compra
+                    dataDolares.push(currentUsd.toFixed(0));
+                }
+            }
+
+            // Render Results
+            document.getElementById('resPesos').innerText = `US$ ${Math.round(currentPesos / currentTcr).toLocaleString()}`;
+            document.getElementById('resAporte').innerText = `US$ ${Math.round(totalInputUsd).toLocaleString()}`;
+            document.getElementById('resDolares').innerText = `US$ ${Math.round(currentUsd).toLocaleString()}`;
+
+            // Update Yield comparative bar chart
+            updateYieldComparison(inflacionArsAnual, tasaPesosAnual, rendSypAnual, inflacionUsdAnual);
+
+            if (projectionChart) projectionChart.destroy();
+
+            // Show canvas and remove placeholder container borders
+            document.getElementById('projectionChart').classList.remove('hidden');
+            document.getElementById('projectionChartPlaceholder').classList.add('hidden');
+            document.getElementById('projectionChartContainer').classList.remove('flex', 'items-center', 'justify-center', 'border-dashed');
+
+            projectionChart = new Chart(ctxProj, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Estrategia Pesos (Equiv. USD)',
+                            data: dataPesos,
+                            borderColor: '#94a3b8',
+                            tension: 0.3,
+                            fill: false
+                        },
+                        {
+                            label: 'Estrategia S&P 500 (USD)',
+                            data: dataDolares,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    interaction: { intersect: false, mode: 'index' },
+                    scales: {
+                        y: { title: { display: true, text: 'Valor en Dólares (USD)' } }
+                    }
+                }
+            });
+
+            showToast("Simulación calculada con los parámetros ingresados.");
+        }
+
+
+        // ==========================================
+        // GEMINI API INTEGRATION & CHATBOT FEATURES
+        // ==========================================
+
+        let conversationHistory = [];
+
+        async function callGeminiAPI(query, systemInstruction, useSearch = false) {
+            const apiKey = ""; // Left blank, Canvas platform injects it dynamically
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            // Build request payload
+            const payload = {
+                contents: [
+                    ...conversationHistory,
+                    { role: "user", parts: [{ text: query }] }
+                ],
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                }
+            };
+
+            // Inject search grounding if required
+            if (useSearch) {
+                payload.tools = [{ "google_search": {} }];
+            }
+
+            let delay = 1000;
+            const maxRetries = 3;
+
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error en llamada API: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    return result;
+
+                } catch (error) {
+                    if (attempt === maxRetries - 1) {
+                        console.error("Max retries reached. Error: ", error);
+                        throw error;
+                    }
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2; // Exponential backoff
+                }
+            }
+        }
+
+        // Simple renderer for formatting basic markdown from Gemini safely
+        function formatMarkdown(text) {
+            let parsed = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Format bold tags
+            parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            // Format list points
+            parsed = parsed.replace(/^\*\s+(.*)$/gm, '<li class="ml-4 list-disc">$1</li>');
+            
+            // Render linebreaks
+            parsed = parsed.replace(/\n/g, '<br>');
+            return parsed;
+        }
+
+        async function sendMessage() {
+            const inputEl = document.getElementById('chatInput');
+            const query = inputEl.value.trim();
+            if (!query) return;
+
+            // Render user bubble
+            appendMessage("Tú", query, false);
+            inputEl.value = "";
+
+            // Render Loader
+            const loaderId = appendLoader();
+
+            const sysInst = "Actúa como un estratega financiero sénior de Argentina conocido como 'Angel Economista'. Ofrece explicaciones sumamente profesionales, fundamentadas de forma técnica y sencillas sobre mercado cambiario, bonos, plazos fijos, LECAPs, inflación e inversiones internacionales en dólares. Siempre sé analítico.";
+
+            try {
+                const response = await callGeminiAPI(query, sysInst, true);
+                removeLoader(loaderId);
+
+                const candidate = response.candidates?.[0];
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    const answerText = candidate.content.parts[0].text;
+                    
+                    // Parse source citations if any
+                    let sourcesHtml = "";
+                    const attributions = candidate.groundingMetadata?.groundingAttributions;
+                    if (attributions && attributions.length > 0) {
+                        sourcesHtml = "<div class='mt-3 pt-2 border-t border-indigo-200 text-xs text-slate-500'><span class='font-bold block mb-1 text-slate-600'>Fuentes consultadas por IA:</span><ul class='space-y-1'>";
+                        const uniqueUrls = new Set();
+                        attributions.forEach(attr => {
+                            const uri = attr.web?.uri;
+                            const title = attr.web?.title;
+                            if (uri && title && !uniqueUrls.has(uri)) {
+                                uniqueUrls.add(uri);
+                                sourcesHtml += `<li>🔗 <a href="${uri}" target="_blank" class="text-indigo-600 hover:underline font-medium">${title}</a></li>`;
+                            }
+                        });
+                        sourcesHtml += "</ul></div>";
+                    }
+
+                    // Append model message to state history
+                    conversationHistory.push({ role: "user", parts: [{ text: query }] });
+                    conversationHistory.push({ role: "model", parts: [{ text: answerText }] });
+
+                    // Render answer
+                    appendMessage("Angel Economista", formatMarkdown(answerText) + sourcesHtml, true);
+                } else {
+                    appendMessage("Angel Economista", "Disculpa, no logré formular una respuesta correcta. Vuelve a intentarlo.", true);
+                }
+
+            } catch (e) {
+                removeLoader(loaderId);
+                appendMessage("Angel Economista", "Ocurrió un error de red o límite de cuota al conectar con el cerebro de IA. Por favor, intenta de nuevo más tarde.", true);
+            }
+        }
+
+        function sendQuickQuestion(questionText) {
+            document.getElementById('chatInput').value = questionText;
+            sendMessage();
+        }
+
+        function appendMessage(sender, text, isAi = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const wrapper = document.createElement('div');
+            
+            if (isAi) {
+                wrapper.className = "bg-indigo-50 text-indigo-950 p-4 rounded-2xl rounded-tl-none max-w-[85%] text-sm self-start shadow-sm border border-indigo-100";
+                wrapper.innerHTML = `<p class="font-bold text-indigo-900 mb-1">${sender}:</p><div>${text}</div>`;
+            } else {
+                wrapper.className = "bg-slate-200 text-slate-800 p-4 rounded-2xl rounded-tr-none max-w-[85%] text-sm self-end shadow-sm border border-slate-300 ml-auto";
+                wrapper.innerHTML = `<p class="font-bold text-slate-700 mb-1">${sender}:</p><div>${text}</div>`;
+            }
+
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function appendLoader() {
+            const chatMessages = document.getElementById('chatMessages');
+            const loaderId = "loader_" + Date.now();
+            
+            const wrapper = document.createElement('div');
+            wrapper.id = loaderId;
+            wrapper.className = "bg-indigo-50 p-5 rounded-2xl rounded-tl-none max-w-[150px] text-sm self-start flex items-center justify-center space-x-2";
+            wrapper.innerHTML = `<div class="dot-flashing my-1"></div>`;
+            
+            chatMessages.appendChild(wrapper);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loaderId;
+        }
+
+        function removeLoader(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+    </script>
+</body>
+</html>
